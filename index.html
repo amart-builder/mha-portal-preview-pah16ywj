@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>MHA Client Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --canvas:#f8f9fb; --surface:#fff; --ink:#20242d; --muted:#69707d; --faint:#9aa0ab;
+  --line:#e4e7eb; --soft:#f0f2f7; --accent:#2f4f8f; --accent-soft:#e8edf7; --bench:#8fa3c9;
+  --good:#3f7d5c; --good-soft:#e6f1ea; --warn:#a0621b; --warn-soft:#f7ecdd;
+}
+*{box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--canvas);color:var(--ink);font:400 15px/1.55 "DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+
+.bar{position:sticky;top:0;z-index:10;background:rgba(248,249,251,.88);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid transparent;transition:border-color .18s}
+.bar.scrolled{border-color:var(--line)}
+.bar-inner{max-width:1180px;margin:0 auto;padding:0 28px;height:64px;display:flex;align-items:center;gap:28px}
+.brand{display:flex;align-items:baseline;gap:10px;white-space:nowrap}
+.brand b{font-weight:600;letter-spacing:.14em;font-size:13px}
+.brand span{color:var(--muted);font-size:13px}
+nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1}
+nav::-webkit-scrollbar{display:none}
+nav button{border:0;background:none;padding:8px 12px;border-radius:7px;color:var(--muted);font-size:14px;white-space:nowrap;transition:color .18s,background .18s}
+nav button:hover{color:var(--ink);background:var(--soft)}
+nav button[aria-current="page"]{color:var(--ink);font-weight:500}
+nav button[aria-current="page"]::after{content:"";display:block;height:1.5px;background:var(--ink);margin:4px auto -6px;width:16px;border-radius:2px}
+.role{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);white-space:nowrap}
+.role select{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:6px 28px 6px 10px;font-size:13px;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 14px) 50%,calc(100% - 10px) 50%;background-size:4px 4px;background-repeat:no-repeat}
+
+main{max-width:1180px;margin:0 auto;padding:44px 28px 88px}
+.view{display:none;animation:rise .28s cubic-bezier(.2,.7,.2,1)}
+.view.on{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.view{animation:none}*{transition:none!important}}
+
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:32px;flex-wrap:wrap}
+.eyebrow{color:var(--muted);font-size:13px;margin:0 0 8px}
+h1{font-weight:500;font-size:32px;letter-spacing:-.035em;line-height:1.15;margin:0}
+h2{font-weight:500;font-size:16px;letter-spacing:-.01em;margin:0 0 18px}
+.source{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.source i{width:7px;height:7px;border-radius:50%;background:var(--good);display:inline-block}
+.source i.w{background:#d4a24c}
+
+.grid{display:grid;gap:18px}
+.g-2{grid-template-columns:1.4fr 1fr;align-items:start}
+.g-2e{grid-template-columns:1fr 1fr}
+.g-3{grid-template-columns:repeat(3,1fr)}
+.g-4{grid-template-columns:repeat(4,1fr)}
+.mt{margin-top:18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:26px}
+.muted{color:var(--muted)} .small{font-size:13px}
+
+.stat .k{font-size:13px;color:var(--muted);margin-bottom:6px}
+.stat .v{font-size:27px;font-weight:500;letter-spacing:-.03em;line-height:1.2}
+.stat .d{font-size:12px;margin-top:6px;color:var(--muted)}
+.pos{color:var(--good)} .neg{color:var(--warn)}
+
+.rundown{background:var(--ink);color:#fff;border:0}
+.rundown h2{color:#fff;display:flex;align-items:center;gap:10px}
+.rundown h2 small{font-weight:400;font-size:12px;color:#aab1bf}
+.rundown ol{margin:0;padding:0;list-style:none;counter-reset:r}
+.rundown li{counter-increment:r;display:grid;grid-template-columns:22px 1fr;gap:10px;padding:12px 0;border-top:1px solid rgba(255,255,255,.1);color:#e7eaf0}
+.rundown li:first-child{border-top:0;padding-top:0}
+.rundown li::before{content:counter(r);color:#8f98a8;font-size:13px;padding-top:2px}
+.ask{display:flex;gap:8px;margin-top:18px}
+.ask input{flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:7px;padding:10px 12px;color:#fff;outline:none}
+.ask input::placeholder{color:#9aa3b3}
+.ask input:focus{border-color:rgba(255,255,255,.4)}
+.ask button{background:#fff;color:var(--ink);border:0;border-radius:7px;padding:0 16px;font-size:13px;font-weight:500}
+.answer{margin:14px 0 0;color:#cfd4dd;font-size:14px;display:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chips button{background:none;border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:5px 12px;font-size:12px;color:#cfd4dd;transition:background .16s,border-color .16s}
+.chips button:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.3)}
+
+.demo{background:var(--accent);color:#fff;font-size:13px}
+.demo div{max-width:1180px;margin:0 auto;padding:9px 28px;display:flex;gap:10px;align-items:baseline}
+.demo b{font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.75}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-weight:500;color:var(--muted);font-size:12px;text-align:left;padding:0 10px 12px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:13px 10px 13px 0;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+.r{text-align:right} th.r{text-align:right}
+tr.total td{font-weight:600;border-top:1px solid var(--ink);border-bottom:0}
+tr.sub td:first-child{color:var(--muted)}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--soft)}
+.tbl{overflow-x:auto}
+
+.pill{font-size:12px;padding:3px 9px;border-radius:20px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.pill.g{background:var(--good-soft);color:var(--good)}
+.pill.w{background:var(--warn-soft);color:var(--warn)}
+.pill.a{background:var(--accent-soft);color:var(--accent)}
+.grade{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;font-size:12px;font-weight:600;background:var(--accent-soft);color:var(--accent)}
+.grade.B{background:var(--soft);color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:7px 12px;font-size:13px;white-space:nowrap;transition:background .16s}
+.btn:hover{background:var(--soft)}
+.btn.done{background:var(--good-soft);border-color:var(--good-soft);color:var(--good)}
+
+.bench{display:grid;gap:20px}
+.brow .top{display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px}
+.brow .top span:last-child{color:var(--muted);font-size:13px}
+.track{position:relative;height:8px;background:var(--soft);border-radius:8px}
+.track i{position:absolute;left:0;top:0;bottom:0;border-radius:8px;background:var(--ink)}
+.track i.w{background:#c9974a}
+.track em{position:absolute;top:-4px;width:2px;height:16px;background:var(--accent);border-radius:2px}
+.legend{display:flex;gap:18px;font-size:12px;color:var(--muted);margin-top:16px;flex-wrap:wrap}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--ink);margin-right:6px;vertical-align:-1px}
+.legend span.b::before{width:12px;height:2px;border-radius:1px;background:var(--bench);vertical-align:3px}
+.legend span.ly::before{background:#cfd6e4}
+
+.miss{display:flex;justify-content:space-between;align-items:baseline;padding:14px 0;border-top:1px solid var(--line)}
+.miss:first-of-type{border-top:0;padding-top:0}
+.miss b{font-weight:500;font-size:20px;letter-spacing:-.02em}
+
+.scope{display:none;margin:-14px 0 24px;font-size:13px;color:var(--accent);background:var(--accent-soft);border-radius:8px;padding:10px 14px}
+body.director .scope{display:block}
+body.director [data-team],body.owner [data-team]{display:none!important}
+body.director [data-owner]{display:none!important}
+
+.apps{display:grid;gap:18px}
+.app{display:grid;grid-template-columns:40px 1fr auto;gap:14px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.app:first-of-type{border-top:0;padding-top:0}
+.app:last-child{padding-bottom:0}
+.logo{width:40px;height:40px;border-radius:9px;display:grid;place-items:center;font-size:13px;font-weight:600;color:#fff}
+.app .nm{font-weight:500}
+.app .nm .pill{margin-left:8px;vertical-align:1px}
+.app p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+.btn.pri{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn.pri:hover{background:#373c47}
+.cat{font-size:12px;color:var(--muted);margin:0 0 14px;font-weight:500;letter-spacing:.02em}
+.modal{position:fixed;inset:0;background:rgba(20,23,30,.4);display:none;place-items:center;z-index:20;padding:16px}
+.modal.on{display:grid;animation:fade .18s ease-out}
+@keyframes fade{from{opacity:0}}
+.sheet{background:var(--surface);border-radius:12px;max-width:440px;width:100%;padding:28px;box-shadow:0 20px 60px rgba(20,23,30,.25)}
+.sheet h3{margin:14px 0 4px;font-weight:500;font-size:19px;letter-spacing:-.02em}
+.sheet ul{margin:6px 0 16px;padding-left:18px;font-size:14px}
+.sheet li{margin:4px 0}
+.sheet .lbl{font-size:12px;color:var(--muted);margin:18px 0 0}
+.sheet .row{display:flex;gap:8px;justify-content:flex-end;margin-top:22px}
+.drop{border:1px dashed #cdd3dd;border-radius:10px;padding:22px;text-align:center;color:var(--muted);font-size:13px}
+
+.foot{max-width:1180px;margin:0 auto;padding:0 28px 36px;color:var(--faint);font-size:12px;display:flex;justify-content:space-between;gap:16px}
+
+@media (max-width:920px){
+  .g-2,.g-2e,.g-3{grid-template-columns:1fr}
+  .g-4{grid-template-columns:1fr 1fr}
+  .bar-inner{gap:14px;padding:0 16px}
+  .brand span,.role label{display:none}
+  main{padding:30px 16px 64px}
+  .foot{padding:0 16px 28px;flex-direction:column}
+  h1{font-size:27px}
+  .card{padding:20px}
+  .demo div{padding:9px 16px}
+}
+@media (max-width:640px){
+  .bar-inner{height:auto;flex-wrap:wrap;padding:10px 16px 4px;row-gap:4px;justify-content:space-between}
+  nav{order:3;flex-basis:100%;margin:0 -12px}
+  .g-4{grid-template-columns:1fr}
+  .demo div{flex-direction:column;gap:2px}
+  .ask{flex-direction:column}
+  .ask button{padding:10px 16px}
+}
+</style>
+</head>
+<body class="owner">
+
+<div class="demo"><div><b>Demo</b><span id="demo-note"></span></div></div>
+
+<header class="bar" id="bar">
+  <div class="bar-inner">
+    <div class="brand"><b>MHA</b><span>Shoreline Physical Therapy</span></div>
+    <nav id="nav" aria-label="Portal">
+      <button data-v="overview">Overview</button>
+      <button data-v="financial">Financial</button>
+      <button data-v="operations">Operations</button>
+      <button data-v="marketing">Marketing</button>
+      <button data-v="connections" data-owner>Connections</button>
+      <button data-v="clients" data-team>Clients</button>
+    </nav>
+    <div class="role"><label for="role">View as</label>
+      <select id="role">
+        <option value="owner">Owner</option>
+        <option value="director">Clinic director, Millbrook</option>
+        <option value="team">MHA team</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- OVERVIEW -->
+<section class="view" id="overview">
+  <div class="head">
+    <div><p class="eyebrow">August 2026, year to date</p><h1 id="ov-title">Good morning, Dana.</h1></div>
+  </div>
+  <div class="scope">You're seeing Millbrook only. Other clinics' numbers are not shared with this login.</div>
+
+  <div class="grid g-2">
+    <div class="card rundown">
+      <h2>This month's rundown <small>Prepared from your numbers on Sep 4</small></h2>
+      <ol data-owner>
+        <li>Millbrook is the biggest gap. Revenue is $92K under budget, visits are 1,060 short, and referrals from Dr. Chen at Millbrook Ortho fell from 112 to 71.</li>
+        <li>Company arrival rate is 87.9% against a 90% target. Closing that gap is worth about $158K so far this year.</li>
+        <li>Referrals are up 6% on last year. Dr. Kaplan at Harbor Sports Med is up 44% and is ready to be treated as a primary source.</li>
+      </ol>
+      <ol data-director>
+        <li>Revenue is $92K under budget. Visits are 1,060 short of target.</li>
+        <li>Arrival rate is 84.1%. At 90% you would have about 610 more visits this year, worth about $65K.</li>
+        <li>Referrals from Dr. Chen at Millbrook Ortho are down from 112 to 71. That office was your top source last year.</li>
+      </ol>
+      <form class="ask" id="ask"><input id="ask-in" placeholder="Ask about your numbers" aria-label="Ask about your numbers"><button>Ask</button></form>
+      <div class="chips" id="chips"></div>
+      <p class="answer" id="answer"></p>
+    </div>
+    <div class="grid" style="gap:18px">
+      <div class="card stat"><div class="k">Net operating income vs budget</div><div class="v" id="ov-noi"></div><div class="d" id="ov-noi-d"></div></div>
+      <div class="card stat"><div class="k">Visits vs target</div><div class="v" id="ov-vis"></div><div class="d" id="ov-vis-d"></div></div>
+      <div class="card stat"><div class="k">Referrals vs last year</div><div class="v" id="ov-ref"></div><div class="d" id="ov-ref-d"></div></div>
+    </div>
+  </div>
+
+  <div class="card mt" data-owner>
+    <h2>By clinic</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Clinic</th><th class="r">Revenue vs budget</th><th class="r">Visits vs target</th><th class="r">Arrival rate</th><th class="r">Referrals vs last year</th></tr></thead>
+      <tbody id="clinics"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- FINANCIAL -->
+<section class="view" id="financial">
+  <div class="head">
+    <div><p class="eyebrow">Financial tool</p><h1>Budget vs. actual</h1></div>
+    <div class="source"><i></i>QuickBooks Online, synced today at 2:00 AM</div>
+  </div>
+  <div class="scope">Millbrook only.</div>
+  <div class="grid g-4">
+    <div class="card stat"><div class="k">Revenue</div><div class="v" id="f-rev"></div><div class="d" id="f-rev-d"></div></div>
+    <div class="card stat"><div class="k">Expenses</div><div class="v" id="f-exp"></div><div class="d" id="f-exp-d"></div></div>
+    <div class="card stat"><div class="k">Net operating income</div><div class="v" id="f-noi"></div><div class="d" id="f-noi-d"></div></div>
+    <div class="card stat"><div class="k">Net revenue per visit</div><div class="v" id="f-nrpv"></div><div class="d" id="f-nrpv-d"></div></div>
+  </div>
+  <div class="grid g-2 mt">
+    <div class="card">
+      <h2>Revenue by month</h2>
+      <div id="f-chart"></div>
+      <div class="legend"><span>Actual</span><span class="b">Budget</span></div>
+    </div>
+    <div class="card">
+      <h2>Year to date</h2>
+      <div class="tbl"><table>
+        <thead><tr><th></th><th class="r">Budget</th><th class="r">Actual</th><th class="r">Variance</th></tr></thead>
+        <tbody id="pl"></tbody>
+      </table></div>
+      <p class="muted small" style="margin:16px 0 0" id="f-driver"></p>
+    </div>
+  </div>
+</section>
+
+<!-- OPERATIONS -->
+<section class="view" id="operations">
+  <div class="head">
+    <div><p class="eyebrow">Operations tool</p><h1>Targets vs. actual</h1></div>
+    <div class="source"><i></i>EMR reports for August, added Sep 3</div>
+  </div>
+  <div class="scope">Millbrook only.</div>
+  <div class="grid g-4">
+    <div class="card stat"><div class="k">Visits</div><div class="v" id="o-vis"></div><div class="d" id="o-vis-d"></div></div>
+    <div class="card stat"><div class="k">Evals</div><div class="v" id="o-ev"></div><div class="d" id="o-ev-d"></div></div>
+    <div class="card stat"><div class="k">Arrival rate</div><div class="v" id="o-ar"></div><div class="d">Target 90%</div></div>
+    <div class="card stat"><div class="k">Visits per eval</div><div class="v" id="o-vpe"></div><div class="d">Target 11</div></div>
+  </div>
+  <div class="grid g-2 mt">
+    <div class="card">
+      <h2>Productivity vs. benchmark</h2>
+      <div class="bench" id="o-bench"></div>
+      <div class="legend"><span>Actual</span><span class="b">National benchmark</span></div>
+    </div>
+    <div class="card">
+      <h2>Missed opportunity, year to date</h2>
+      <div id="o-miss"></div>
+      <p class="muted small" style="margin:14px 0 0">Visits you would have had at target, times your net revenue per visit.</p>
+    </div>
+  </div>
+</section>
+
+<!-- MARKETING -->
+<section class="view" id="marketing">
+  <div class="head">
+    <div><p class="eyebrow">Marketing tool</p><h1>Referrals</h1></div>
+    <div class="source"><i></i>EMR referral report for August, added Sep 3</div>
+  </div>
+  <div class="scope">Millbrook only.</div>
+  <div class="grid g-2">
+    <div class="card">
+      <h2 id="m-h">New referrals by month</h2>
+      <div id="m-chart"></div>
+      <div class="legend"><span>2026</span><span class="ly">2025</span></div>
+    </div>
+    <div class="grid" style="gap:18px">
+      <div class="card stat"><div class="k">Referrals, year to date</div><div class="v" id="m-ytd"></div><div class="d" id="m-ytd-d"></div></div>
+      <div class="card stat"><div class="k">Top 5 sources share</div><div class="v" id="m-conc"></div><div class="d">Of all new referrals</div></div>
+    </div>
+  </div>
+  <div class="grid g-2 mt">
+    <div class="card">
+      <h2>Referral sources</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>Source</th><th>Rating</th><th class="r">2026</th><th class="r">2025</th><th class="r">Change</th><th class="r">% of all</th></tr></thead>
+        <tbody id="m-src"></tbody>
+      </table></div>
+    </div>
+    <div class="card" data-owner>
+      <h2>Direct contact plan, August</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>Tier</th><th class="r">Sources</th><th class="r">Visits</th><th class="r">Target</th></tr></thead>
+        <tbody>
+          <tr><td>Primary</td><td class="r">5</td><td class="r">22</td><td class="r"><span class="pill g">20</span></td></tr>
+          <tr><td>Secondary</td><td class="r">10</td><td class="r">31</td><td class="r"><span class="pill w">40</span></td></tr>
+          <tr><td>Tertiary</td><td class="r">38</td><td class="r">44</td><td class="r"><span class="pill w">60</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONNECTIONS -->
+<section class="view" id="connections">
+  <div class="head">
+    <div><p class="eyebrow">Settings</p><h1>Connected apps</h1></div>
+    <div class="source"><i></i><span id="conn-count"></span></div>
+  </div>
+  <p class="muted" style="margin:-16px 0 26px;max-width:640px">Connect the apps your practice already uses and your dashboards fill in on their own. Every connection is read-only, and you can turn any of them off here.</p>
+  <div class="grid g-2e" id="apps"></div>
+</section>
+
+<!-- CLIENTS (MHA team) -->
+<section class="view" id="clients">
+  <div class="head">
+    <div><p class="eyebrow">MHA team</p><h1>Clients</h1></div>
+  </div>
+  <div class="card">
+    <div class="tbl"><table>
+      <thead><tr><th>Client</th><th>Tools</th><th>QuickBooks</th><th>EMR reports</th><th class="r">Status</th></tr></thead>
+      <tbody>
+        <tr class="click" data-go="overview"><td>Shoreline Physical Therapy<div class="muted small">6 clinics</div></td><td>Financial, Operations, Marketing</td><td>Synced 2:00 AM</td><td>August, added Sep 3</td><td class="r"><span class="pill g">Live</span></td></tr>
+        <tr><td>Keystone Rehab<div class="muted small">9 clinics</div></td><td>Financial, Operations</td><td>Synced 2:00 AM</td><td>August due</td><td class="r"><span class="pill w">Needs EMR</span></td></tr>
+        <tr><td>Summit Hand Therapy<div class="muted small">2 clinics</div></td><td>Operations, Marketing</td><td class="muted">Not used</td><td>August, added Sep 5</td><td class="r"><span class="pill g">Live</span></td></tr>
+        <tr><td>Blue Ridge PT<div class="muted small">3 clinics</div></td><td>Financial, Operations, Marketing</td><td>Connected Sep 20</td><td class="muted">Not started</td><td class="r"><span class="pill a">Setting up</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="grid g-2 mt">
+    <div class="card">
+      <h2>Blue Ridge PT: map QuickBooks to the MHA P&amp;L</h2>
+      <p class="muted small" style="margin:-8px 0 16px">64 accounts found. 58 matched on their own. These 6 need a yes or a change.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Their account</th><th>Suggested MHA line</th><th></th></tr></thead>
+        <tbody id="map"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h2>EMR reports</h2>
+      <div class="drop">Drop this month's operations and referral reports here.<br>WebPT, Raintree, Prompt and Net Health formats.</div>
+      <p class="muted small" style="margin:16px 0 0">EMR data can't be pulled automatically. Reports are added monthly by the MHA team, then every dashboard updates.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="m-title"><div class="sheet" id="sheet"></div></div>
+
+<footer class="foot"><span>Martin Healthcare Advisors</span><span>Mockup. Sample practice and figures.</span></footer>
+
+<script>
+const D={
+  all:{
+    name:"Dana",
+    rev:[6840,6610], pl:[["Revenue",6840,6610,1],["Salaries and related",3560,3470],["Professional services",210,224],["Facility",690,688],["Marketing",120,97],["Clinical",380,372],["Direct admin",300,304],["Corporate overhead",370,335]],
+    revM:[[830,812],[810,790],[870,861],[860,842],[860,828],[850,815],[880,846],[880,816]],
+    vis:[63600,61150], ev:[5700,5460], ar:[.90,.879], vpd:11.6, upv:3.7, vph:1.44,
+    ref:[2022,2140], refM:[[240,248],[251,262],[262,281],[258,270],[247,259],[268,287],[250,266],[246,267]],
+    src:[["Direct access","A",468,431],["Dr. Patel, Coastal Ortho","A",162,171],["Dr. Nguyen, Bayside Spine","A",141,118],["Dr. Romero, Family Health","B",96,102],["Dr. Kaplan, Harbor Sports Med","B",88,61],["Dr. Chen, Millbrook Ortho","B",71,112]]
+  },
+  mb:{
+    name:"Marcus",
+    rev:[1020,928], pl:[["Revenue",1020,928,1],["Salaries and related",520,515],["Professional services",28,30],["Facility",112,112],["Marketing",18,12],["Clinical",55,54],["Direct admin",45,47],["Corporate overhead",82,75]],
+    revM:[[125,122],[122,118],[128,120],[127,117],[128,112],[127,114],[132,113],[131,112]],
+    vis:[9700,8640], ev:[880,815], ar:[.90,.841], vpd:10.4, upv:3.6, vph:1.31,
+    ref:[380,312], refM:[[46,44],[47,42],[48,41],[47,40],[48,38],[47,37],[49,36],[48,34]],
+    src:[["Dr. Chen, Millbrook Ortho","B",71,112],["Direct access","A",64,70],["Dr. Patel, Coastal Ortho","A",38,41],["Dr. Alvarez, Valley Primary Care","B",29,33]]
+  }
+};
+const CLINICS=[["Red Oak",4.1,2.9,.912,12],["Harbor View",-2.0,-3.1,.884,3],["Millbrook",-9.0,-10.9,.841,-18],["Westfield",1.2,0.6,.903,9],["Lakeside",-5.1,-7.2,.867,-4],["Pine Hill",2.3,3.3,.899,15]];
+const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug"];
+const MAP=[["Doctor Lunches & Meals","Lunch for Doctors (Marketing)"],["Payroll - Techs","PT Aide Salaries"],["Rent - Main St Clinic","Rent Expense (Facility)"],["Kinematics Fee","Kinematic Fee (Clinical)"],["Owner Draw - Health Ins","Health and Dental Insurance"],["Misc Refunds","Refund of Payment (Revenue)"]];
+
+const $=id=>document.getElementById(id);
+const money=k=>k>=1000?"$"+(k/1000).toFixed(2)+"M":"$"+Math.round(k)+"K";
+const pct=(a,b)=>(a/b-1)*100;
+const sign=(n,d=1)=>(n>0?"+":"")+n.toFixed(d)+"%";
+const cls=(good)=>good?"pos":"neg";
+let scope="all";
+
+function sum(pl,from){return pl.slice(from).reduce((s,r)=>[s[0]+r[1],s[1]+r[2]],[0,0])}
+
+function barChart(rows){
+  const W=560,H=210,max=Math.max(...rows.flat())*1.15,bw=34,gap=(W-40)/rows.length;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Revenue by month, actual vs budget">`;
+  s+=`<line x1="30" x2="${W}" y1="180" y2="180" stroke="#e4e7eb"/>`;
+  rows.forEach(([b,a],i)=>{const x=40+i*gap,ya=180-a/max*160,yb=180-b/max*160;
+    s+=`<rect x="${x}" y="${ya}" width="${bw}" height="${180-ya}" rx="4" fill="${a<b?'#20242d':'#20242d'}" opacity="${a<b?.82:1}"/>`;
+    s+=`<line x1="${x-5}" x2="${x+bw+5}" y1="${yb}" y2="${yb}" stroke="#8fa3c9" stroke-width="2.5" stroke-linecap="round"/>`;
+    s+=`<text x="${x+bw/2}" y="200" font-size="12" fill="#69707d" text-anchor="middle">${MONTHS[i]}</text>`;});
+  return s+`</svg>`;
+}
+function lineChart(rows){
+  const W=560,H=210,all=rows.flat(),mn=Math.min(...all)*.9,mx=Math.max(...all)*1.05,gap=(W-60)/(rows.length-1);
+  const y=v=>170-(v-mn)/(mx-mn)*150, pts=k=>rows.map((r,i)=>`${40+i*gap},${y(r[k])}`).join(" ");
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Referrals by month, this year vs last">`;
+  s+=`<line x1="30" x2="${W}" y1="180" y2="180" stroke="#e4e7eb"/>`;
+  s+=`<polyline points="${pts(0)}" fill="none" stroke="#cfd6e4" stroke-width="2.5" stroke-linejoin="round"/>`;
+  s+=`<polyline points="${pts(1)}" fill="none" stroke="#20242d" stroke-width="2.5" stroke-linejoin="round"/>`;
+  rows.forEach((r,i)=>{s+=`<circle cx="${40+i*gap}" cy="${y(r[1])}" r="3.5" fill="#20242d"/><text x="${40+i*gap}" y="200" font-size="12" fill="#69707d" text-anchor="middle">${MONTHS[i]}</text>`;});
+  return s+`</svg>`;
+}
+
+function render(){
+  const d=D[scope];
+  const [rb,ra]=d.rev, [eb,ea]=sum(d.pl,1), nb=rb-eb, na=ra-ea;
+  const nrpvB=rb*1000/d.vis[0], nrpvA=ra*1000/d.vis[1];
+  const h=new Date().getHours(); $("ov-title").textContent=`Good ${h<12?"morning":h<17?"afternoon":"evening"}, ${d.name}.`;
+
+  $("ov-noi").textContent=money(na); $("ov-noi-d").innerHTML=`<span class="${cls(na>=nb)}">${sign(pct(na,nb))}</span> vs ${money(nb)} budget`;
+  $("ov-vis").textContent=d.vis[1].toLocaleString(); $("ov-vis-d").innerHTML=`<span class="${cls(d.vis[1]>=d.vis[0])}">${sign(pct(d.vis[1],d.vis[0]))}</span> vs ${d.vis[0].toLocaleString()} target`;
+  $("ov-ref").textContent=d.ref[1].toLocaleString(); $("ov-ref-d").innerHTML=`<span class="${cls(d.ref[1]>=d.ref[0])}">${sign(pct(d.ref[1],d.ref[0]))}</span> vs ${d.ref[0].toLocaleString()} in 2025`;
+
+  $("clinics").innerHTML=CLINICS.map(([n,r,v,a,f])=>`<tr><td>${n}</td><td class="r ${cls(r>=0)}">${sign(r)}</td><td class="r ${cls(v>=0)}">${sign(v)}</td><td class="r ${a<.9?'neg':''}">${(a*100).toFixed(1)}%</td><td class="r ${cls(f>=0)}">${sign(f,0)}</td></tr>`).join("");
+
+  $("f-rev").textContent=money(ra); $("f-rev-d").innerHTML=`<span class="${cls(ra>=rb)}">${sign(pct(ra,rb))}</span> vs ${money(rb)}`;
+  $("f-exp").textContent=money(ea); $("f-exp-d").innerHTML=`<span class="${cls(ea<=eb)}">${sign(pct(ea,eb))}</span> vs ${money(eb)}`;
+  $("f-noi").textContent=money(na); $("f-noi-d").innerHTML=`<span class="${cls(na>=nb)}">${sign(pct(na,nb))}</span> vs ${money(nb)}`;
+  $("f-nrpv").textContent="$"+nrpvA.toFixed(2); $("f-nrpv-d").innerHTML=`<span class="${cls(nrpvA>=nrpvB)}">${sign(pct(nrpvA,nrpvB))}</span> vs $${nrpvB.toFixed(2)}`;
+  $("f-chart").innerHTML=barChart(d.revM);
+  const row=(n,b,a,isRev,c="")=>{const v=a-b,good=isRev?v>=0:v<=0;return `<tr class="${c}"><td>${n}</td><td class="r">${money(b)}</td><td class="r">${money(a)}</td><td class="r ${Math.abs(v)<1?'':cls(good)}">${v>0?"+":v<0?"−":""}${money(Math.abs(v))}</td></tr>`};
+  $("pl").innerHTML=row(...d.pl[0].slice(0,3),true)+d.pl.slice(1).map(r=>row(r[0],r[1],r[2],false,"sub")).join("")+row("Total expenses",eb,ea,false)+row("Net operating income",nb,na,true,"total");
+  $("f-driver").textContent=`Budget is built from your operations plan: ${d.vis[0].toLocaleString()} visits at $${nrpvB.toFixed(2)} per visit.`;
+
+  $("o-vis").textContent=d.vis[1].toLocaleString(); $("o-vis-d").innerHTML=`<span class="${cls(d.vis[1]>=d.vis[0])}">${sign(pct(d.vis[1],d.vis[0]))}</span> vs ${d.vis[0].toLocaleString()}`;
+  $("o-ev").textContent=d.ev[1].toLocaleString(); $("o-ev-d").innerHTML=`<span class="${cls(d.ev[1]>=d.ev[0])}">${sign(pct(d.ev[1],d.ev[0]))}</span> vs ${d.ev[0].toLocaleString()}`;
+  $("o-ar").textContent=(d.ar[1]*100).toFixed(1)+"%";
+  const vpe=d.vis[1]/d.ev[1]; $("o-vpe").textContent=vpe.toFixed(1);
+  const B=[["Visits per clinician per day",d.vpd,12,16,1],["Units per visit",d.upv,3.8,5,1],["Visits per clinician hour",d.vph,1.5,2,2],["Arrival rate",d.ar[1]*100,90,100,1,"%"]];
+  $("o-bench").innerHTML=B.map(([n,a,t,mx,dp,u=""])=>`<div class="brow"><div class="top"><span>${n}</span><span>${a.toFixed(dp)}${u} / ${t}${u}</span></div><div class="track"><i class="${a<t?'w':''}" style="width:${a/mx*100}%"></i><em style="left:${t/mx*100}%"></em></div></div>`).join("");
+  const missAr=Math.max(0,d.vis[1]*(d.ar[0]/d.ar[1]-1))*nrpvA/1000;
+  const missVpe=Math.max(0,d.ev[1]*(11-vpe))*nrpvA/1000;
+  const missVpd=Math.max(0,d.vis[1]*(12/d.vpd-1))*nrpvA/1000;
+  const m=(n,v)=>`<div class="miss"><span>${n}</span><b class="${v>0?'neg':'pos'}">${v>0?money(v):"On target"}</b></div>`;
+  $("o-miss").innerHTML=m("At 90% arrival rate",missAr)+m("At 11 visits per eval",missVpe)+m("At 12 visits per clinician per day",missVpd);
+
+  $("m-chart").innerHTML=lineChart(d.refM);
+  $("m-ytd").textContent=d.ref[1].toLocaleString(); $("m-ytd-d").innerHTML=`<span class="${cls(d.ref[1]>=d.ref[0])}">${sign(pct(d.ref[1],d.ref[0]))}</span> vs ${d.ref[0].toLocaleString()} in 2025`;
+  const top5=[...d.src].sort((a,b)=>b[2]-a[2]).slice(0,5).reduce((s,r)=>s+r[2],0);
+  $("m-conc").textContent=Math.round(top5/d.ref[1]*100)+"%";
+  $("m-src").innerHTML=d.src.map(([n,g,a,b])=>`<tr><td>${n}</td><td><span class="grade ${g}">${g}</span></td><td class="r">${a}</td><td class="r">${b}</td><td class="r ${cls(a>=b)}">${sign(pct(a,b),0)}</td><td class="r">${(a/d.ref[1]*100).toFixed(1)}%</td></tr>`).join("");
+}
+
+$("map").innerHTML=MAP.map(([a,b],i)=>`<tr><td>${a}</td><td>${b}<div class="muted small">Suggested by Claude</div></td><td class="r"><button class="btn" data-ok="${i}">Approve</button></td></tr>`).join("");
+
+const views=[...document.querySelectorAll(".view")], navBtns=[...document.querySelectorAll("#nav button")];
+function show(id){
+  const cl=document.body.classList;
+  if(!$(id)||(id==="clients"&&!cl.contains("team"))||(id==="connections"&&cl.contains("director"))) id="overview";
+  views.forEach(v=>v.classList.toggle("on",v.id===id));
+  navBtns.forEach(b=>b.dataset.v===id?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current"));
+  const cur=navBtns.find(b=>b.dataset.v===id); $("nav").scrollLeft=cur.offsetLeft-$("nav").offsetLeft-12;
+  if(location.hash.slice(1)!==id) history.replaceState(null,"","#"+id);
+  window.scrollTo({top:0});
+}
+function setRole(r){
+  document.body.className=r;
+  scope=r==="director"?"mb":"all";
+  document.querySelectorAll("[data-director]").forEach(e=>e.style.display=r==="director"?"":"none");
+  $("answer").style.display="none";
+  render();
+  show(r==="team"?"clients":location.hash.slice(1)==="clients"?"overview":location.hash.slice(1)||"overview");
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-v],[data-go]"); if(t) show(t.dataset.v||t.dataset.go);
+  const ok=e.target.closest("[data-ok]"); if(ok){ok.textContent="Approved";ok.classList.add("done");}
+});
+$("role").addEventListener("change",e=>setRole(e.target.value));
+const QA={
+  all:[
+    ["Why are we under budget?","under|budget|gap|revenue","Millbrook explains $92K of the $230K revenue gap. The rest is spread across Lakeside and Harbor View, mostly from arrival rate, not referrals."],
+    ["What's the fastest fix?","fast|fix|close|quick|improve","Arrival rate. Getting the company from 87.9% to 90% would have added about 1,460 visits this year, worth $158K, with no new patients. Millbrook, at 84.1%, is $65K of that."],
+    ["Which doctors should we visit?","doctor|referr|source|visit|marketing","Start with Dr. Chen at Millbrook Ortho. That office sent 71 patients this year, down from 112, the biggest drop of any source. Dr. Kaplan at Harbor Sports Med is up from 61 to 88 and should move to the primary tier."]
+  ],
+  mb:[
+    ["Why are we short on visits?","short|visit|why|arriv","Mostly arrivals. 15.9% of scheduled visits didn't happen, which cost about 610 visits. The biggest drop was Tuesdays and Thursdays after 4 PM. Evals are also 65 behind plan."],
+    ["What happened with Dr. Chen?","chen|doctor|referr|source","Dr. Chen's office sent 71 new patients this year, down from 112 by this point last year. It was your top source in 2025, and it explains 41 of the 68 referrals you're down."],
+    ["How are we on visits per eval?","eval|per|plan of care","10.6 against a target of 11. At 11, you would have had about 325 more visits this year, worth about $35K."]
+  ]
+};
+const NOTE={
+  owner:"You're signed in as Dana, who owns all six clinics. Use View as to see what a clinic director or the MHA team sees.",
+  director:"You're signed in as Marcus, the Millbrook clinic director. This login only shows Millbrook's numbers.",
+  team:"This is the MHA team's view. It lists every client and handles setup: QuickBooks mapping and the monthly EMR reports."
+};
+// Connected apps. st: on = connected, off = can connect, req = vendor partner deal first, emr = reports added by MHA monthly.
+const APPS=[
+  ["Accounting",[
+    {n:"QuickBooks Online",m:"QB",c:"#2c9f45",st:"on",d:"Profit and loss, chart of accounts, budgets",to:"Financial"},
+    {n:"Xero",m:"X",c:"#1ab4d7",st:"off",d:"Profit and loss, chart of accounts",to:"Financial"}
+  ]],
+  ["Payroll",[
+    {n:"Gusto",m:"G",c:"#e2574c",st:"off",d:"Payroll totals and hours by clinic",to:"Financial"},
+    {n:"ADP Workforce Now",m:"ADP",c:"#d0271d",st:"req",d:"Payroll totals and hours by clinic",to:"Financial"},
+    {n:"Paychex Flex",m:"P",c:"#1f5aa6",st:"req",d:"Payroll totals and hours by clinic",to:"Financial"}
+  ]],
+  ["EMR and scheduling",[
+    {n:"WebPT",m:"W",c:"#e8792b",st:"emr",d:"Visits, evals, arrivals, referrals",to:"Operations and Marketing"},
+    {n:"Raintree",m:"R",c:"#2d7a4f",st:"emr",d:"Visits, evals, arrivals, referrals",to:"Operations and Marketing"},
+    {n:"Prompt",m:"P",c:"#5b4bdb",st:"emr",d:"Visits, evals, arrivals, referrals",to:"Operations and Marketing"},
+    {n:"Net Health",m:"NH",c:"#0b6e8a",st:"emr",d:"Visits, evals, arrivals, referrals",to:"Operations and Marketing"},
+    {n:"Tebra",m:"T",c:"#6a2c91",st:"off",d:"Appointments, charges and payments",to:"Operations"}
+  ]],
+  ["Marketing and reviews",[
+    {n:"Google Business Profile",m:"G",c:"#4285f4",st:"on",d:"Reviews, ratings, calls and direction requests",to:"Marketing"},
+    {n:"Google Ads",m:"GA",c:"#34a853",st:"off",d:"Ad spend, clicks and calls by campaign",to:"Marketing"},
+    {n:"Meta Ads",m:"M",c:"#0866ff",st:"off",d:"Ad spend and leads from Facebook and Instagram",to:"Marketing"},
+    {n:"Podium",m:"P",c:"#1d1d1f",st:"off",d:"Reviews and patient messages",to:"Marketing"},
+    {n:"CallRail",m:"CR",c:"#0f5f9c",st:"off",d:"Calls by source, including which ads and listings drove them",to:"Marketing"}
+  ]]
+];
+const ALL=APPS.flatMap(g=>g[1]);
+function renderApps(){
+  $("apps").innerHTML=APPS.map(([cat,items])=>`<div class="card"><p class="cat">${cat}</p>${items.map(a=>{const i=ALL.indexOf(a);
+    const right=a.st==="on"?`<button class="btn" data-app="${i}">Manage</button>`:a.st==="off"?`<button class="btn pri" data-app="${i}">Connect</button>`:a.st==="req"?`<button class="btn" data-app="${i}">Request</button>`:`<button class="btn" data-app="${i}">How it works</button>`;
+    const pill=a.st==="on"?`<span class="pill g">Connected</span>`:a.st==="emr"?`<span class="pill">Monthly reports</span>`:a.st==="req"?`<span class="pill">By request</span>`:"";
+    return `<div class="app"><div class="logo" style="background:${a.c}">${a.m}</div><div><div class="nm">${a.n}${pill}</div><p>${a.d}</p></div>${right}</div>`}).join("")}</div>`).join("");
+  $("conn-count").textContent=`${ALL.filter(a=>a.st==="on").length} apps connected`;
+}
+function openApp(i){
+  const a=ALL[i], logo=`<div class="logo" style="background:${a.c}">${a.m}</div>`;
+  const reads=`<p class="lbl">What MHA can see</p><ul><li>${a.d}</li><li>Feeds your ${a.to} dashboard</li></ul><p class="lbl">What MHA can't do</p><ul><li>Change, send or delete anything in ${a.n}</li><li>See your password. You sign in on ${a.n}'s own site.</li></ul>`;
+  $("sheet").innerHTML=a.st==="on"
+    ?`${logo}<h3 id="m-title">${a.n}</h3><p class="muted small" style="margin:0">Connected. Read-only. Last sync today at 2:00 AM.</p>${reads}<div class="row"><button class="btn" data-x="off" data-i="${i}">Disconnect</button><button class="btn pri" data-x="close">Done</button></div>`
+    :a.st==="off"
+    ?`${logo}<h3 id="m-title">Connect ${a.n}</h3><p class="muted small" style="margin:0">Read-only access. You can disconnect any time.</p>${reads}<div class="row"><button class="btn" data-x="close">Cancel</button><button class="btn pri" data-x="on" data-i="${i}">Continue to ${a.n}</button></div>`
+    :a.st==="req"
+    ?`${logo}<h3 id="m-title">${a.n}</h3><p style="margin:10px 0 0;font-size:14px">${a.n} only shares data with approved partners, so this one takes a request. The MHA team sets it up with your payroll admin. Until then, your monthly payroll report works the same way.</p><div class="row"><button class="btn" data-x="close">Cancel</button><button class="btn pri" data-x="req" data-i="${i}">Request connection</button></div>`
+    :`${logo}<h3 id="m-title">${a.n}</h3><p style="margin:10px 0 0;font-size:14px">${a.n} doesn't offer an open connection for practice data, so the MHA team exports your visit and referral reports each month. Your Operations and Marketing dashboards update as soon as they're added.</p><p class="muted small" style="margin:12px 0 0">Last reports: August, added Sep 3.</p><div class="row"><button class="btn pri" data-x="close">Got it</button></div>`;
+  $("modal").classList.add("on");
+}
+$("apps").addEventListener("click",e=>{const b=e.target.closest("[data-app]");if(b)openApp(+b.dataset.app);});
+$("modal").addEventListener("click",e=>{
+  const b=e.target.closest("[data-x]");
+  if(e.target===$("modal")||(b&&b.dataset.x==="close")){$("modal").classList.remove("on");return;}
+  if(!b)return;
+  const a=ALL[b.dataset.i];
+  if(b.dataset.x==="on"){b.textContent="Connecting…";b.disabled=true;
+    setTimeout(()=>{a.st="on";renderApps();$("sheet").innerHTML=`<div class="logo" style="background:${a.c}">${a.m}</div><h3 id="m-title">${a.n} is connected</h3><p style="margin:10px 0 0;font-size:14px">The first sync runs tonight at 2:00 AM. Your ${a.to} dashboard will include it tomorrow morning.</p><div class="row"><button class="btn pri" data-x="close">Done</button></div>`;},900);}
+  if(b.dataset.x==="req"){b.textContent="Requested";b.disabled=true;b.classList.add("done");return;}
+  if(b.dataset.x==="off"){a.st="off";renderApps();$("modal").classList.remove("on");}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("modal").classList.remove("on");});
+renderApps();
+
+function answer(text){const a=$("answer");a.textContent=text;a.style.display="block";}
+function renderQA(){$("chips").innerHTML=QA[scope].map((q,i)=>`<button type="button" data-q="${i}">${q[0]}</button>`).join("");}
+$("chips").addEventListener("click",e=>{const b=e.target.closest("[data-q]");if(!b)return;const q=QA[scope][b.dataset.q];$("ask-in").value=q[0];answer(q[2]);});
+$("ask").addEventListener("submit",e=>{e.preventDefault();const t=$("ask-in").value.toLowerCase();if(!t.trim())return;
+  const hit=QA[scope].find(q=>new RegExp(q[1]).test(t));
+  answer(hit?hit[2]:"This demo answers the sample questions below. The live portal answers any question from your own numbers.");});
+$("role").addEventListener("change",()=>{$("demo-note").textContent=NOTE[$("role").value];$("ask-in").value="";renderQA();});
+$("demo-note").textContent=NOTE.owner;
+renderQA();
+window.addEventListener("scroll",()=>$("bar").classList.toggle("scrolled",scrollY>4),{passive:true});
+setRole("owner");
+</script>
+</body>
+</html>
